@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'Barlow Condensed', sans-serif;
+  --font-mono:    'Space Mono', monospace;
+}
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: #080808; color: #F5F0E8; font-family: var(--font-body); font-size: 18px; overflow-x: hidden; }
+  h1,h2,h3,h4 { font-family: var(--font-display); letter-spacing: .05em; line-height: 1; }
+  ::selection { background: #FFD700; color: #080808; }
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: #0F0F0F; }
+  ::-webkit-scrollbar-thumb { background: #FFD700; border-radius: 2px; }
+}
+
+@layer components {
+  .btn-gold    { @apply bg-gold text-ink font-display tracking-widest text-lg px-8 py-3 transition-all duration-150 hover:bg-gold-dark hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed; }
+  .btn-outline { @apply border border-gold text-gold font-display tracking-widest text-lg px-8 py-3 transition-all duration-150 hover:bg-gold hover:text-ink hover:-translate-y-0.5; }
+  .btn-ghost   { @apply text-ink-700 font-mono text-sm tracking-widest uppercase hover:text-gold transition-colors duration-150 py-2; }
+  .btn-danger  { @apply bg-rap-red/10 border border-rap-red/40 text-rap-red font-mono text-xs tracking-widest uppercase px-4 py-2 hover:bg-rap-red/20 transition-colors; }
+
+  .card { @apply bg-ink-200 border border-ink-400 relative overflow-hidden; }
+  .card::before { content: ''; @apply absolute top-0 left-0 w-[3px] h-full bg-gold; }
+
+  .input-field { @apply w-full bg-ink-300 border border-ink-500 text-cream font-body text-lg px-4 py-3 outline-none focus:border-gold focus:ring-1 focus:ring-gold placeholder:text-ink-600 transition-all; }
+  .label       { @apply font-mono text-xs text-ink-700 tracking-[.3em] uppercase mb-2 block; }
+
+  .badge          { @apply font-mono text-[10px] tracking-widest uppercase px-3 py-1 inline-block; }
+  .badge-pending  { @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30; }
+  .badge-confirmed { @apply bg-rap-green/20 text-rap-green border border-rap-green/30; }
+  .badge-completed { @apply bg-ink-500/20 text-ink-700 border border-ink-500/30; }
+  .badge-cancelled { @apply bg-rap-red/20 text-rap-red border border-rap-red/30; }
+  .badge-free      { @apply bg-ink-500/20 text-ink-700 border border-ink-500/30; }
+  .badge-pro       { @apply bg-gold/20 text-gold border border-gold/30; }
+
+  .gold-line   { @apply h-px bg-gradient-to-r from-gold to-transparent; }
+  .section-title { @apply font-display text-4xl text-gold tracking-[.1em]; }
+  .nav-link    { @apply font-display text-xl tracking-[.15em] text-ink-800 hover:text-gold transition-colors uppercase; }
+  .stat-box    { @apply bg-ink-200 border border-ink-400 p-6 text-center; }
+}
+
+/* Noise overlay */
+.noise::after { content:''; position:absolute; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events:none; }
+
+/* Shimmer */
+.shimmer { position:relative; overflow:hidden; }
+.shimmer::after { content:''; position:absolute; inset:0; background:linear-gradient(105deg,transparent 40%,rgba(255,215,0,.07) 50%,transparent 60%); animation: shimmer 1.8s ease infinite; }
+
+/* Stagger */
+.stagger > * { opacity:0; animation: fade-up .4s ease forwards; }
+.stagger > *:nth-child(1) { animation-delay:.05s; }
+.stagger > *:nth-child(2) { animation-delay:.10s; }
+.stagger > *:nth-child(3) { animation-delay:.15s; }
+.stagger > *:nth-child(4) { animation-delay:.20s; }
+.stagger > *:nth-child(5) { animation-delay:.25s; }
+.stagger > *:nth-child(6) { animation-delay:.30s; }
+
+@keyframes fade-up    { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes shimmer    { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
+@keyframes marquee    { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+@keyframes pulse-gold { 0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,.25)} 50%{box-shadow:0 0 24px 4px rgba(255,215,0,.12)} }
+
+.animate-marquee    { animation: marquee 24s linear infinite; }
+.animate-pulse-gold { animation: pulse-gold 2.5s ease-in-out infinite; }
+#MainMenu,footer,header { visibility: hidden; }
