@@ -6,8 +6,10 @@ import {
   apiSuperGetEmailConfig, apiSuperSetEmailConfig, apiSuperTestEmail, apiSuperSchedulerJobs,
 } from '@/lib/api';
 import type { Tenant } from '@/types';
-import { Scissors, Plus, Trash2, X, CheckCircle, XCircle, Shield, ExternalLink, Mail, Bell, Layers, Eye, EyeOff } from 'lucide-react';
+import { Scissors, Plus, Trash2, X, CheckCircle, XCircle, Shield, ExternalLink, Mail, Bell, Layers, Eye, EyeOff, KeyRound } from 'lucide-react';
 import Link from 'next/link';
+
+const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 function fmtDate(d: string) { return new Date(d).toLocaleDateString('es-CL'); }
 function fmtDateTime(d: string) { return new Date(d).toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
@@ -15,6 +17,10 @@ const slugify = (v: string) => v.toLowerCase().replace(/\s+/g, '-').replace(/[^a
 
 export default function AdminPage() {
   const [logged, setLogged]     = useState(false);
+  const [mustChangePw, setMustChangePw] = useState(false);
+  const [changePwForm, setChangePwForm] = useState({ current_password: '', new_password: '', confirm: '' });
+  const [changePwErr, setChangePwErr]   = useState('');
+  const [changePwOk, setChangePwOk]     = useState(false);
   const [tab, setTab]           = useState<'tenants' | 'email' | 'scheduler'>('tenants');
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginErr, setLoginErr] = useState('');
@@ -48,8 +54,30 @@ export default function AdminPage() {
     try {
       const data = await apiSuperLogin(loginForm);
       localStorage.setItem('homie_super_token', data.token);
+      if (data.must_change_password) {
+        setMustChangePw(true);
+        setChangePwForm(f => ({ ...f, current_password: loginForm.password }));
+      }
       setLogged(true); loadAll();
     } catch (e: unknown) { setLoginErr(e instanceof Error ? e.message : 'Error'); }
+  };
+
+  const handleChangePassword = async () => {
+    if (!changePwForm.new_password || !changePwForm.confirm) { setChangePwErr('Completa todos los campos'); return; }
+    if (changePwForm.new_password !== changePwForm.confirm) { setChangePwErr('Las contraseñas no coinciden'); return; }
+    if (changePwForm.new_password.length < 12) { setChangePwErr('Mínimo 12 caracteres'); return; }
+    setChangePwErr('');
+    try {
+      const token = localStorage.getItem('homie_super_token');
+      const res = await fetch(`${BASE}/api/super/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ current_password: changePwForm.current_password, new_password: changePwForm.new_password }),
+      });
+      if (!res.ok) { const d = await res.json(); setChangePwErr(d.detail || 'Error'); return; }
+      setChangePwOk(true);
+      setMustChangePw(false);
+    } catch { setChangePwErr('Error al cambiar contraseña'); }
   };
 
   const loadAll = () => { loadTenants(); loadEmailConfig(); };
@@ -148,7 +176,6 @@ export default function AdminPage() {
           </div>
           {loginErr && <p className="font-mono text-[11px] text-rap-red tracking-widest bg-rap-red/10 border border-rap-red/30 px-4 py-3">{loginErr}</p>}
           <button onClick={login} className="btn-gold w-full text-xl py-4">ENTRAR →</button>
-          <p className="font-mono text-[10px] text-ink-600 tracking-widest text-center">Default: admin / homie2024</p>
         </div>
         <div className="text-center mt-6">
           <Link href="/" className="font-mono text-[11px] text-ink-700 hover:text-gold tracking-widest">← Volver al inicio</Link>
@@ -157,9 +184,59 @@ export default function AdminPage() {
     </div>
   );
 
+  // ── CHANGE PASSWORD MODAL ─────────────────────────────────────────────────
+  if (mustChangePw) return (
+    <div className="min-h-screen flex items-center justify-center px-4 bg-ink">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-5">
+            <KeyRound size={28} className="text-gold"/>
+          </div>
+          <h1 className="font-display text-4xl text-cream">CAMBIA TU CONTRASEÑA</h1>
+          <p className="font-mono text-[11px] text-gold tracking-[.3em] mt-2 uppercase">Requerido en el primer inicio de sesión</p>
+        </div>
+        <div className="card p-8 space-y-5">
+          <div>
+            <label className="label">Contraseña actual</label>
+            <input className="input-field" type="password" value={changePwForm.current_password}
+              onChange={e => setChangePwForm({...changePwForm, current_password: e.target.value})}/>
+          </div>
+          <div>
+            <label className="label">Nueva contraseña (mínimo 12 caracteres)</label>
+            <input className="input-field" type="password" placeholder="••••••••••••"
+              value={changePwForm.new_password}
+              onChange={e => setChangePwForm({...changePwForm, new_password: e.target.value})}/>
+          </div>
+          <div>
+            <label className="label">Confirmar nueva contraseña</label>
+            <input className="input-field" type="password" placeholder="••••••••••••"
+              value={changePwForm.confirm}
+              onChange={e => setChangePwForm({...changePwForm, confirm: e.target.value})}
+              onKeyDown={e => e.key === 'Enter' && handleChangePassword()}/>
+          </div>
+          {changePwErr && <p className="font-mono text-[11px] text-rap-red tracking-widest bg-rap-red/10 border border-rap-red/30 px-4 py-3">{changePwErr}</p>}
+          <button onClick={handleChangePassword} className="btn-gold w-full text-xl py-4">
+            GUARDAR CONTRASEÑA →
+          </button>
+          <button onClick={() => setMustChangePw(false)} className="btn-ghost w-full text-center">
+            Cambiar después
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   // ── DASHBOARD ─────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen p-8">
+      {/* Cambio de contraseña exitoso */}
+      {changePwOk && (
+        <div className="flex items-center gap-3 bg-rap-green/10 border border-rap-green/30 px-5 py-3 mb-6">
+          <CheckCircle size={15} className="text-rap-green flex-shrink-0"/>
+          <p className="font-mono text-[11px] text-rap-green tracking-widest">Contraseña actualizada correctamente.</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-end justify-between mb-8">
         <div>
@@ -178,6 +255,10 @@ export default function AdminPage() {
               <Plus size={16}/> Nueva barbería
             </button>
           )}
+          <button onClick={() => setMustChangePw(true)}
+            className="flex items-center gap-2 font-mono text-[11px] text-ink-600 hover:text-gold tracking-widest uppercase transition-colors border border-ink-500 hover:border-gold/40 px-3 py-2">
+            <KeyRound size={13}/> Contraseña
+          </button>
           <button onClick={() => { localStorage.removeItem('homie_super_token'); setLogged(false); }} className="btn-ghost">
             Salir
           </button>

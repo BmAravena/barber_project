@@ -56,6 +56,23 @@ function OnboardingContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState<{ slug: string } | null>(null);
+  const [nameCheck, setNameCheck] = useState<'idle' | 'checking' | 'taken' | 'available'>('idle');
+
+  // Validar nombre en tiempo real
+  useEffect(() => {
+    if (!form.name || form.name.length < 2) { setNameCheck('idle'); return; }
+    setNameCheck('checking');
+    const timer = setTimeout(async () => {
+      try {
+        const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const res = await fetch(`${BASE}/api/search?q=${encodeURIComponent(form.name)}`);
+        const data = await res.json();
+        const exact = data.some((b: any) => b.name.toLowerCase() === form.name.toLowerCase());
+        setNameCheck(exact ? 'taken' : 'available');
+      } catch { setNameCheck('idle'); }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [form.name]);
 
   useEffect(() => {
     const planFromUrl = searchParams.get('plan');
@@ -268,6 +285,15 @@ function OnboardingContent() {
                 <input className="input-field" placeholder="Ej: Homie Barber Shop"
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value, slug: slugify(e.target.value) })} />
+                {nameCheck === 'checking' && (
+                  <p className="font-mono text-[10px] text-ink-600 tracking-widest mt-1">Verificando disponibilidad...</p>
+                )}
+                {nameCheck === 'taken' && (
+                  <p className="font-mono text-[10px] text-rap-red tracking-widest mt-1">✗ Ya existe una barbería con ese nombre</p>
+                )}
+                {nameCheck === 'available' && (
+                  <p className="font-mono text-[10px] text-rap-green tracking-widest mt-1">✓ Nombre disponible</p>
+                )}
               </div>
               <div className="col-span-2">
                 <label className="label">Slug (URL única) *</label>
@@ -308,7 +334,7 @@ function OnboardingContent() {
             {error && <p className="font-mono text-[11px] text-rap-red tracking-widest bg-rap-red/10 border border-rap-red/30 px-4 py-3">{error}</p>}
             <div className="flex gap-3 pt-2">
               <button onClick={() => setStep(0)} className="btn-ghost">← Atrás</button>
-              <button onClick={next} disabled={loading} className="btn-gold flex-1 flex items-center justify-center gap-2 text-xl py-4">
+              <button onClick={next} disabled={loading || nameCheck === 'taken'} className="btn-gold flex-1 flex items-center justify-center gap-2 text-xl py-4">
                 Siguiente <ArrowRight size={18} />
               </button>
             </div>

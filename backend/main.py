@@ -580,6 +580,8 @@ def create_tenant(body: TenantCreate, sa=Depends(_current_superadmin)):
     db = get_super_db()
     if db.execute("SELECT id FROM tenants WHERE slug=?", (body.slug,)).fetchone():
         db.close(); raise HTTPException(409, "Slug ya existe")
+    if db.execute("SELECT id FROM tenants WHERE LOWER(name)=LOWER(?)", (body.name,)).fetchone():
+        db.close(); raise HTTPException(409, f"Ya existe una barbería con el nombre '{body.name}'")
     tid = str(uuid.uuid4())
     lat, lng = _geocode(body.address, body.city)
     db.execute(
@@ -1061,6 +1063,8 @@ def onboarding(body: OnboardBody):
     db = get_super_db()
     if db.execute("SELECT id FROM tenants WHERE slug=?", (body.slug,)).fetchone():
         db.close(); raise HTTPException(409, "Slug ya en uso")
+    if db.execute("SELECT id FROM tenants WHERE LOWER(name)=LOWER(?)", (body.name,)).fetchone():
+        db.close(); raise HTTPException(409, f"Ya existe una barbería llamada '{body.name}'. Elige un nombre diferente.")
     tid = str(uuid.uuid4())
 
     # Geocodificar la dirección en background (no bloquea el registro si falla)
