@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiGetBarbers, apiGetServices, apiAvailability, apiBook, getToken, apiGetMe } from '@/lib/api';
@@ -20,7 +20,7 @@ function getNextDays(n: number) {
   return days;
 }
 
-export default function BookPage() {
+function BookContent() {
   const { tenant } = useParams<{ tenant: string }>();
   const params = useSearchParams();
   const preBarber = params.get('barber');
@@ -345,5 +345,17 @@ export default function BookPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function BookPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <BookContent />
+    </Suspense>
   );
 }

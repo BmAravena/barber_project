@@ -1,11 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { setToken, apiRegister, apiValidateInvite } from '@/lib/api';
 import { Scissors, AlertTriangle, CheckCircle } from 'lucide-react';
 
-export default function RegisterPage() {
+function RegisterContent() {
   const { tenant } = useParams<{ tenant: string }>();
   const router = useRouter();
   const params = useSearchParams();
@@ -147,5 +147,17 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   );
 }
